@@ -8,12 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.github.manishdait.aquila.auth.AuthService;
-import io.github.manishdait.aquila.dto.request.ProjectRequest;
-import io.github.manishdait.aquila.dto.response.ProjectResponse;
-import io.github.manishdait.aquila.dto.response.UserResponse;
 import io.github.manishdait.aquila.ticket.TicketRepository;
 import io.github.manishdait.aquila.users.User;
 import io.github.manishdait.aquila.users.UserRepository;
+import io.github.manishdait.aquila.users.UserResponse;
 import lombok.AllArgsConstructor;
 
 @Service
@@ -28,18 +26,18 @@ public class ProjectService {
 
     public ProjectResponse createProject(ProjectRequest request) {
         User user = authService.getCurrentUser();
-        request.getTeamMembers().add(user.getUsername());
+        request.teamMembers().add(user.getUsername());
         
-        Project project = Project.builder().name(request.getName())
-            .description(request.getDescription())
+        Project project = Project.builder().name(request.name())
+            .description(request.description())
             .createdAt(Instant.now())
             .teamMembers(
-                request.getTeamMembers()
+                request.teamMembers()
                     .stream()
                     .map(u -> mapToUser(u))
                     .collect(Collectors.toList())
             )
-            .code(request.getCode())
+            .code(request.code())
             .build();
 
         Project response = projectRepository.save(project);
@@ -77,14 +75,14 @@ public class ProjectService {
     }
 
     public ProjectResponse updateProject(ProjectResponse request) {
-        Project project = projectRepository.findById(request.getId()).orElseThrow();
-        project.setDescription(request.getDescription());
-        project.setName(request.getName());
-        project.setCode(request.getCode());
+        Project project = projectRepository.findById(request.id()).orElseThrow();
+        project.setDescription(request.description());
+        project.setName(request.name());
+        project.setCode(request.code());
         project.setTeamMembers(
-            request.getTeamMembers()
+            request.teamMembers()
                 .stream()
-                .map(u -> mapToUser(u.getName()))
+                .map(u -> mapToUser(u.name()))
                 .collect(Collectors.toList())
         );
         projectRepository.save(project);
@@ -93,21 +91,18 @@ public class ProjectService {
     }
 
     private ProjectResponse mapToProjectResponse(Project project) {
-        return ProjectResponse.builder()
-            .id(project.getId())
-            .name(project.getName())
-            .description(project.getDescription())
-            .ticketCount(ticketRepository.findByProject(project).get().size())
-            .teamMembers(
-                project.getTeamMembers().stream()
-                .map(
-                    u -> new UserResponse(u.getUsername(), u.getEmail(), u.getRole().name(), u.isEnabled())
-                )
-                .collect(Collectors.toList())
-            )
-            .code(project.getCode())
-            .createdAt(project.getCreatedAt())
-            .build();
+        return new ProjectResponse(
+            project.getId(), 
+            project.getCode(), 
+            project.getName(), 
+            project.getDescription(), 
+            ticketRepository.findByProject(project).get().size(), 
+            project.getCreatedAt(),  
+            project.getTeamMembers().stream().map(
+                u -> new UserResponse(u.getUsername(), u.getEmail(), u.getRole().name(), u.isEnabled())
+            ).collect(Collectors.toList())
+        );
+        
     }
 
     private User mapToUser(String username) {

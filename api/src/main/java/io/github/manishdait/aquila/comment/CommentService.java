@@ -7,8 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.github.manishdait.aquila.auth.AuthService;
-import io.github.manishdait.aquila.dto.request.CommentRequest;
-import io.github.manishdait.aquila.dto.response.CommentResponse;
 import io.github.manishdait.aquila.ticket.Ticket;
 import io.github.manishdait.aquila.ticket.TicketRepository;
 import io.github.manishdait.aquila.users.User;
@@ -27,10 +25,10 @@ public class CommentService {
 
     public CommentResponse createComment (CommentRequest request) {
         User user = authService.getCurrentUser();
-        Ticket ticket = ticketRepository.findById(request.getTicketId()).orElseThrow();
+        Ticket ticket = ticketRepository.findById(request.ticketId()).orElseThrow();
 
         Comment comment = Comment.builder()
-            .context(request.getContext())
+            .context(request.context())
             .createdBy(user)
             .ticket(ticket)
             .createdAt(Instant.now())
@@ -75,12 +73,12 @@ public class CommentService {
     }
 
     private CommentResponse mapToCommentResponse(Comment comment) {
-        return CommentResponse.builder()
-            .id(comment.getId())
-            .context(comment.getContext())
-            .createdAt(comment.getCreatedAt())
-            .createdBy(comment.getCreatedBy().getUsername())
-            .ticketId(comment.getTicket().getId())
-            .build();
+        return new CommentResponse(
+            comment.getId(), 
+            comment.getContext(), 
+            comment.getCreatedBy().getUsername(), 
+            comment.getTicket().getId(), 
+            comment.getCreatedAt()
+        );
     }
 }

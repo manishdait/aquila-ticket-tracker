@@ -9,8 +9,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import io.github.manishdait.aquila.dto.request.UserRequest;
-import io.github.manishdait.aquila.dto.response.UserResponse;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
@@ -32,16 +30,16 @@ public class UserService implements UserDetailsService {
     }
 
     public UserResponse updateUser(UserRequest request) {
-        User user = userRepository.findByUsername(request.getName()).orElseThrow();
-        user.setEmail(request.getEmail());
-        if (request.getRole().equals(Role.USER.name())) {
+        User user = userRepository.findByUsername(request.name()).orElseThrow();
+        user.setEmail(request.email());
+        if (request.role().equals(Role.USER.name())) {
             user.setRole(Role.USER);
-        } else if (request.getRole().equals(Role.ADMIN.name())) {
+        } else if (request.role().equals(Role.ADMIN.name())) {
             user.setRole(Role.ADMIN);
         }
 
-        if (request.getPassword() != null) {
-            user.setPassword(request.getPassword());
+        if (request.password() != null) {
+            user.setPassword(request.password());
         }
         
         userRepository.save(user);
@@ -49,11 +47,11 @@ public class UserService implements UserDetailsService {
     }
 
     private UserResponse maprToUserResponse(User user) {
-        return UserResponse.builder()
-            .email(user.getEmail())
-            .name(user.getUsername())
-            .role(user.getRole().name())
-            .enabled(user.isEnabled())
-            .build();
+        return new UserResponse(
+            user.getUsername(), 
+            user.getEmail(), 
+            user.getRole().name(), 
+            user.isEnabled()
+        );
     }
 }

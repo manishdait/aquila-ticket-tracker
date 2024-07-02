@@ -9,13 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import io.github.manishdait.aquila.auth.AuthService;
 import io.github.manishdait.aquila.comment.CommentRepository;
-import io.github.manishdait.aquila.dto.request.TicketRequest;
-import io.github.manishdait.aquila.dto.response.TicketResponse;
-import io.github.manishdait.aquila.dto.response.UserResponse;
 import io.github.manishdait.aquila.project.Project;
 import io.github.manishdait.aquila.project.ProjectRepository;
 import io.github.manishdait.aquila.users.User;
 import io.github.manishdait.aquila.users.UserRepository;
+import io.github.manishdait.aquila.users.UserResponse;
 import lombok.AllArgsConstructor;
 
 @Service
@@ -31,18 +29,18 @@ public class TicketService {
 
     public TicketResponse createTicket (TicketRequest request) {
         User user = authService.getCurrentUser();
-        Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
+        Project project = projectRepository.findById(request.projectId()).orElseThrow();
 
         Ticket ticket = Ticket.builder()
-            .title(request.getTitle())
-            .description(request.getDescription())
-            .priority(request.getPriority())
+            .title(request.title())
+            .description(request.description())
+            .priority(request.priority())
             .status(Status.OPEN)
             .createAt(Instant.now())
             .updatedAt(Instant.now())
             .reportedBy(user)
             .assignees(
-                request.getAssignees()
+                request.assignees()
                     .stream()
                     .map(u -> mapToUser(u))
                     .collect(Collectors.toList())
@@ -108,17 +106,17 @@ public class TicketService {
     }
 
     public TicketResponse updateTicket (TicketResponse request) {
-        Ticket ticket = ticketRepository.findById(request.getId()).orElseThrow(); 
+        Ticket ticket = ticketRepository.findById(request.id()).orElseThrow(); 
         
-        ticket.setTitle(request.getTitle());
-        ticket.setDescription(request.getDescription());
-        ticket.setPriority(request.getPriority());
-        ticket.setStatus(request.getStatus());
+        ticket.setTitle(request.title());
+        ticket.setDescription(request.description());
+        ticket.setPriority(request.priority());
+        ticket.setStatus(request.status());
         ticket.setUpdatedAt(Instant.now());
         ticket.setAssignees(
-                request.getAssignees()
+                request.assignees()
                     .stream()
-                    .map(u -> mapToUser(u.getName()))
+                    .map(u -> mapToUser(u.name()))
                     .collect(Collectors.toList())
         );
 
@@ -132,27 +130,27 @@ public class TicketService {
     }
 
     private TicketResponse mapToTicketResponse (Ticket ticket) {
-        return TicketResponse.builder()
-            .id(ticket.getId())
-            .title(ticket.getTitle())
-            .description(ticket.getDescription())
-            .commentCount(commentRepository.findByTicket(ticket).get().size())
-            .status(ticket.getStatus())
-            .priority(ticket.getPriority())
-            .reportedBy(
-                new UserResponse(ticket.getReportedBy().getUsername(), ticket.getReportedBy().getEmail(), ticket.getReportedBy().getRole().name(), ticket.getReportedBy().isEnabled())
-            )
-            .createdAt(ticket.getCreateAt())
-            .updatedAt(ticket.getUpdatedAt())
-            .assignees(
-                ticket.getAssignees()
-                    .stream()
-                    .map(u -> new UserResponse(u.getUsername(), u.getEmail(), u.getRole().name(), u.isEnabled()))
-                    .collect(Collectors.toList())
-            )
-            .projectId(ticket.getProject().getId())
-            .projectCode(ticket.getProject().getCode())
-            .build();
+        return new TicketResponse(
+            ticket.getId(), 
+            ticket.getTitle(), 
+            ticket.getDescription(), 
+            ticket.getCreateAt(), 
+            ticket.getUpdatedAt(), 
+            ticket.getPriority(), 
+            ticket.getStatus(), 
+            new UserResponse(
+                ticket.getReportedBy().getUsername(), 
+                ticket.getReportedBy().getEmail(), 
+                ticket.getReportedBy().getRole().name(), 
+                ticket.getReportedBy().isEnabled()
+            ), 
+            ticket.getAssignees().stream().map(
+                u -> new UserResponse(u.getUsername(), u.getEmail(), u.getRole().name(), u.isEnabled())
+            ).collect(Collectors.toList()), 
+            ticket.getProject().getId(), 
+            ticket.getProject().getCode(), 
+            commentRepository.findByTicket(ticket).get().size()
+        );
     }
 
     private User mapToUser (String username) {

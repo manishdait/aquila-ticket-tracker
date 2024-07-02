@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.github.manishdait.aquila.dto.request.CommentRequest;
-import io.github.manishdait.aquila.dto.response.CommentResponse;
 import lombok.AllArgsConstructor;
 
 @RestController

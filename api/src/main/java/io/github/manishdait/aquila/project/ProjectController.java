@@ -2,8 +2,6 @@ package io.github.manishdait.aquila.project;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import io.github.manishdait.aquila.dto.request.ProjectRequest;
-import io.github.manishdait.aquila.dto.response.ProjectResponse;
 import lombok.AllArgsConstructor;
 
 import java.util.List;

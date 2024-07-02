@@ -3,10 +3,7 @@ package io.github.manishdait.aquila.auth;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.github.manishdait.aquila.dto.request.LoginRequest;
-import io.github.manishdait.aquila.dto.request.RefereshTokenRequest;
-import io.github.manishdait.aquila.dto.request.SignupRequest;
-import io.github.manishdait.aquila.dto.response.AuthResponse;
+import io.github.manishdait.aquila.token.referesh.RefereshTokenRequest;
 import lombok.AllArgsConstructor;
 
 import org.springframework.http.ResponseEntity;

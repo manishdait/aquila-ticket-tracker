@@ -13,12 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.github.manishdait.aquila.auth.jwt.JwtProvider;
-import io.github.manishdait.aquila.dto.request.LoginRequest;
-import io.github.manishdait.aquila.dto.request.RefereshTokenRequest;
-import io.github.manishdait.aquila.dto.request.SignupRequest;
-import io.github.manishdait.aquila.dto.response.AuthResponse;
 import io.github.manishdait.aquila.mail.MailService;
 import io.github.manishdait.aquila.mail.NotificationEmail;
+import io.github.manishdait.aquila.token.referesh.RefereshTokenRequest;
 import io.github.manishdait.aquila.token.referesh.RefereshTokenService;
 import io.github.manishdait.aquila.token.verification.VerificationToken;
 import io.github.manishdait.aquila.token.verification.VerificationTokenRepository;
@@ -43,9 +40,9 @@ public class AuthService {
 
     public void signUp(SignupRequest request) {
         User user = new User();
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setEmail(request.getEmail());
+        user.setUsername(request.username());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setEmail(request.email());
         user.setEnabled(false);
         user.setRole(Role.USER);
 
@@ -54,9 +51,9 @@ public class AuthService {
         String token = generateToken(response);
 
         NotificationEmail notificationEmail = new NotificationEmail();
-        notificationEmail.setRecipient(request.getEmail());
+        notificationEmail.setRecipient(request.email());
         notificationEmail.setSubject("Activate your Account");
-        notificationEmail.setBody("Hi," + request.getUsername() + 
+        notificationEmail.setBody("Hi," + request.username() + 
                         "\nWelcome to Aquila, Click the below link for activating your account." +
                         "\nhttp://localhost:8080/aquila-api/activate/account/" + token +
                         "\n\n Without activation you will not able to login to your account.");
@@ -66,20 +63,21 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
         if (!authentication.isAuthenticated()) {
            throw new UsernameNotFoundException("Invalid Credential");
         }
-        String token = jwtProvider.generateToken(request.getUsername());
+        String token = jwtProvider.generateToken(request.username());
 
-        return AuthResponse.builder().authToken(token)
-            .refreshToken(refereshTokenService.generateToken())
-            .username(request.getUsername())
-            .createdAt(Instant.now())
-            .expireAt(Instant.now().plusSeconds(900))
-            .role(authentication.getAuthorities().stream().map(g -> g.getAuthority()).toList().get(0))
-            .build();
+        return new AuthResponse(
+            request.username(), 
+            authentication.getAuthorities().stream().map(g -> g.getAuthority()).toList().get(0), 
+            token, 
+            refereshTokenService.generateToken(), 
+            Instant.now(), 
+            Instant.now().plusSeconds(900)
+        );
     } 
 
     public void activateAccount(String token) {
@@ -102,17 +100,18 @@ public class AuthService {
     }
 
     public AuthResponse refreshToken(RefereshTokenRequest request) {
-        if (!refereshTokenService.isValidToken(request.getRefreshToken())) {
+        if (!refereshTokenService.isValidToken(request.refreshToken())) {
             throw new IllegalStateException("Invalid Referesh Token");
         }
 
-        return AuthResponse.builder()
-            .authToken(jwtProvider.generateToken(request.getUsername()))
-            .username(request.getUsername())
-            .refreshToken(request.getRefreshToken())
-            .createdAt(Instant.now())
-            .expireAt(Instant.now().plusSeconds(900))
-            .build();
+        return new AuthResponse(
+            request.username(), 
+            null, 
+            jwtProvider.generateToken(request.username()), 
+            request.refreshToken(), 
+            Instant.now(), 
+            Instant.now().plusSeconds(900)
+        );
     }
 
     public void logout(String token) {
