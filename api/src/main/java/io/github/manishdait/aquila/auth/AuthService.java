@@ -1,24 +1,27 @@
 package io.github.manishdait.aquila.auth;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.github.manishdait.aquila.auth.jwt.JwtProvider;
+import io.github.manishdait.aquila.auth.token.referesh.RefereshTokenRequest;
+import io.github.manishdait.aquila.auth.token.referesh.RefereshTokenService;
+import io.github.manishdait.aquila.auth.token.verification.VerificationToken;
+import io.github.manishdait.aquila.auth.token.verification.VerificationTokenRepository;
+import io.github.manishdait.aquila.error.AquilaApiException;
+import io.github.manishdait.aquila.error.Error;
 import io.github.manishdait.aquila.mail.MailService;
 import io.github.manishdait.aquila.mail.NotificationEmail;
-import io.github.manishdait.aquila.token.referesh.RefereshTokenRequest;
-import io.github.manishdait.aquila.token.referesh.RefereshTokenService;
-import io.github.manishdait.aquila.token.verification.VerificationToken;
-import io.github.manishdait.aquila.token.verification.VerificationTokenRepository;
 import io.github.manishdait.aquila.users.User;
 import io.github.manishdait.aquila.users.UserRepository;
 import io.github.manishdait.aquila.users.Role;
@@ -39,6 +42,26 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public void signUp(SignupRequest request) {
+        Optional<User> duplicate = userRepository.findByUsername(request.username());
+        if (duplicate.isPresent()) {
+            throw new AquilaApiException(
+                HttpStatus.NOT_ACCEPTABLE, 
+                Error.DUPLICATE_VALUE_ERROR.error(), 
+                String.format("The username '%s' is already in use.Use different username.", request.username()), 
+                Instant.now()
+            );
+        }
+
+        duplicate = userRepository.findByEmail(request.email());
+        if (duplicate.isPresent()) {
+            throw new AquilaApiException(
+                HttpStatus.NOT_ACCEPTABLE, 
+                Error.DUPLICATE_VALUE_ERROR.error(), 
+                String.format("The email '%s' is already in use. Use different email.", request.username()), 
+                Instant.now()
+            );
+        }
+
         User user = new User();
         user.setUsername(request.username());
         user.setPassword(passwordEncoder.encode(request.password()));
@@ -62,11 +85,34 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        User user = userRepository.findByUsername(request.username()).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.USERNMAE_NOT_FOUND.error(), 
+                String.format("The username '%s' was not found.Please check if username is valid.", request.username()), 
+                Instant.now()
+            )
+        );
+
+        if (!user.isEnabled()) {
+            throw new AquilaApiException(
+                HttpStatus.FORBIDDEN, 
+                Error.AUTHENTICATION_ERROR.error(), 
+                String.format("Account is not Enabled,Please enable the account using The verifcation Link send in email"), 
+                Instant.now()
+            );
+        }
+
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
         if (!authentication.isAuthenticated()) {
-           throw new UsernameNotFoundException("Invalid Credential");
+            throw new AquilaApiException(
+                HttpStatus.FORBIDDEN, 
+                Error.AUTHENTICATION_ERROR.error(), 
+                String.format("Invalid credentials, Check the username and password."), 
+                Instant.now()
+            );
         }
         String token = jwtProvider.generateToken(request.username());
 
@@ -81,8 +127,23 @@ public class AuthService {
     } 
 
     public void activateAccount(String token) {
-        VerificationToken verificationToken = verificationTokenRepository.findByToken(token).orElseThrow();
-        User user = userRepository.findByUsername(verificationToken.getUser().getUsername()).orElseThrow();
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.INVALID_TOKEN.error(), 
+                "Invalid auth token.", 
+                Instant.now()
+            )
+        );
+
+        User user = userRepository.findByUsername(verificationToken.getUser().getUsername()).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.USERNMAE_NOT_FOUND.error(), 
+                String.format("The username '%s' was not found.Please check if username is valid.", verificationToken.getUser().getUsername()), 
+                Instant.now()
+            )
+        );
 
         user.setEnabled(true);
         verificationTokenRepository.delete(verificationToken);
@@ -96,12 +157,24 @@ public class AuthService {
         }
 
         User user = (User) authentication.getPrincipal();
-        return userRepository.findByUsername(user.getUsername()).orElseThrow();
+        return userRepository.findByUsername(user.getUsername()).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.USERNMAE_NOT_FOUND.error(), 
+                String.format("The username '%s' was not found.Please check if username is valid.", user.getUsername()), 
+                Instant.now()
+            )
+        );
     }
 
     public AuthResponse refreshToken(RefereshTokenRequest request) {
         if (!refereshTokenService.isValidToken(request.refreshToken())) {
-            throw new IllegalStateException("Invalid Referesh Token");
+            throw new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.INVALID_TOKEN.error(), 
+                "Invalid auth token.", 
+                Instant.now()
+            );
         }
 
         return new AuthResponse(

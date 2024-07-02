@@ -12,4 +12,5 @@ import io.github.manishdait.aquila.users.User;
 public interface ProjectRepository extends JpaRepository <Project, Long> {
     Optional<List<Project>> findByTeamMembersContainingIgnoreCase(User user);
     Optional<Project> findByCode(String code);
+    Optional<Project> findByName(String name);
 }

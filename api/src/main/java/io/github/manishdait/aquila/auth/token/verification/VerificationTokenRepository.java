@@ -1,4 +1,4 @@
-package io.github.manishdait.aquila.token.verification;
+package io.github.manishdait.aquila.auth.token.verification;
 
 import java.util.Optional;
 

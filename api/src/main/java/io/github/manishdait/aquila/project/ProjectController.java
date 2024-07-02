@@ -2,6 +2,8 @@ package io.github.manishdait.aquila.project;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import io.github.manishdait.aquila.error.AquilaApiException;
+import io.github.manishdait.aquila.error.ExceptionResponse;
 import lombok.AllArgsConstructor;
 
 import java.util.List;
@@ -9,6 +11,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,5 +54,11 @@ public class ProjectController {
     @PutMapping
     public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectResponse request) {
         return ResponseEntity.status(HttpStatus.OK).body(projectService.updateProject(request));
+    }
+
+    @ExceptionHandler(AquilaApiException.class)
+    public ResponseEntity<ExceptionResponse> handleException(AquilaApiException e) {
+        return ResponseEntity.status(e.getStatus())
+        .body(new ExceptionResponse(e.getStatus().value(), e.getTimestamp(), e.getError(), e.getMessage()));
     }
 }

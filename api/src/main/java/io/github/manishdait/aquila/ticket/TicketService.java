@@ -4,11 +4,14 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.github.manishdait.aquila.auth.AuthService;
 import io.github.manishdait.aquila.comment.CommentRepository;
+import io.github.manishdait.aquila.error.AquilaApiException;
+import io.github.manishdait.aquila.error.Error;
 import io.github.manishdait.aquila.project.Project;
 import io.github.manishdait.aquila.project.ProjectRepository;
 import io.github.manishdait.aquila.users.User;
@@ -29,7 +32,14 @@ public class TicketService {
 
     public TicketResponse createTicket (TicketRequest request) {
         User user = authService.getCurrentUser();
-        Project project = projectRepository.findById(request.projectId()).orElseThrow();
+        Project project = projectRepository.findById(request.projectId()).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.PROJECT_NOT_FOUND.error(), 
+                String.format("The project id '%d' was not found.Please check if project is valid.", request.projectId()), 
+                Instant.now()
+            )
+        );
 
         Ticket ticket = Ticket.builder()
             .title(request.title())
@@ -61,7 +71,14 @@ public class TicketService {
     }
 
     public List<TicketResponse> getTicketByUser (String username) {
-        User user = userRepository.findByUsername(username).orElseThrow();
+        User user = userRepository.findByUsername(username).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.USERNMAE_NOT_FOUND.error(), 
+                String.format("The username '%s' was not found.Please check if username is valid.", username), 
+                Instant.now()
+            )
+        );
         List<Ticket> tickets = ticketRepository.findByReportedBy(user).orElseThrow();
 
         return tickets
@@ -71,7 +88,14 @@ public class TicketService {
     }
 
     public List<TicketResponse> getTicketByAssignee (String username) {
-        User user = userRepository.findByUsername(username).orElseThrow();
+        User user = userRepository.findByUsername(username).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.USERNMAE_NOT_FOUND.error(), 
+                String.format("The username '%s' was not found.Please check if username is valid.", username), 
+                Instant.now()
+            )
+        );
         List<Ticket> tickets = ticketRepository.findByAssigneesContainingIgnoreCase(user).orElseThrow();
 
         return tickets
@@ -81,7 +105,14 @@ public class TicketService {
     }
 
     public List<TicketResponse> getTicketByProject (Long id) {
-        Project project = projectRepository.findById(id).orElseThrow();
+        Project project = projectRepository.findById(id).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.PROJECT_NOT_FOUND.error(), 
+                String.format("The project id '%d' was not found.Please check if project is valid.", id), 
+                Instant.now()
+            )
+        );
         List<Ticket> tickets = ticketRepository.findByProject(project).orElseThrow();
 
         return tickets
@@ -91,7 +122,14 @@ public class TicketService {
     }
 
     public List<TicketResponse> getTicketByProject (String code) {
-        Project project = projectRepository.findByCode(code).orElseThrow();
+        Project project = projectRepository.findByCode(code).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.PROJECT_NOT_FOUND.error(), 
+                String.format("The project code '%s' was not found.Please check if project is valid.", code), 
+                Instant.now()
+            )
+        );
         List<Ticket> tickets = ticketRepository.findByProject(project).orElseThrow();
 
         return tickets
@@ -106,7 +144,14 @@ public class TicketService {
     }
 
     public TicketResponse updateTicket (TicketResponse request) {
-        Ticket ticket = ticketRepository.findById(request.id()).orElseThrow(); 
+        Ticket ticket = ticketRepository.findById(request.id()).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.TICKET_NOT_FOUND.error(), 
+                String.format("The ticket id '%d' was not found.Please check if ticket is valid.", request.id()), 
+                Instant.now()
+            )
+        ); 
         
         ticket.setTitle(request.title());
         ticket.setDescription(request.description());
@@ -154,6 +199,13 @@ public class TicketService {
     }
 
     private User mapToUser (String username) {
-        return userRepository.findByUsername(username).orElseThrow();
+        return userRepository.findByUsername(username).orElseThrow(
+            () -> new AquilaApiException(
+                HttpStatus.NOT_FOUND, 
+                Error.USERNMAE_NOT_FOUND.error(), 
+                String.format("The username '%s' was not found.Please check if username is valid.", username), 
+                Instant.now()
+            )
+        );
     }
 }

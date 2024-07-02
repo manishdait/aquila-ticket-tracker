@@ -1,4 +1,4 @@
-package io.github.manishdait.aquila.token.referesh;
+package io.github.manishdait.aquila.auth.token.referesh;
 
 import java.time.Instant;
 
