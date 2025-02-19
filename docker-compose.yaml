@@ -1,0 +1,16 @@
+services:
+  postgres_db:
+    container_name: postgres_db
+    image: postgres:alpine
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - data:/var/lib/postgresql/date
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=latte_db
+
+volumes:
+  data: {}

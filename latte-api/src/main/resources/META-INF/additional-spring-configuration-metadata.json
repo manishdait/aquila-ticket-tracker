@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "security.jwt.secret-key",
+      "type": "java.lang.String",
+      "description": "Secret key for json web token"
+    },
+    {
+      "name": "security.jwt.expiration",
+      "type": "java.lang.Integer",
+      "description": "Expiration time in seconds for json web token"
+    },
+    {
+      "name": "security.refresh-token.expiration",
+      "type": "java.lang.Integer",
+      "description": "Expiration time in seconds for refresh token"
+    }
+  ]
+}

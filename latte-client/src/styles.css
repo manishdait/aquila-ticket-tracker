@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+body {
+  background-color: #fff;
+}
+
+html {
+  font-size: 0.95rem;
+}
+
+@media screen and (max-width: 700px) {
+  html {
+    font-size: 0.8;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  html {
+    font-size: 0.7;
+  }
+}
+
+@media screen and (max-width: 200px) {
+  html {
+    font-size: 0.6;
+  }
+}
