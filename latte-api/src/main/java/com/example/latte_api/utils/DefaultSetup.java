@@ -2,6 +2,9 @@ package com.example.latte_api.utils;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalTime;
 import java.util.UUID;
 
@@ -28,19 +31,19 @@ public class DefaultSetup {
 
   @PostConstruct
   public void init() {
-    File dir = new File(".cred");
-    if(!dir.exists()) {
-      dir.mkdir();
-    }
-
-    File cred = new File(".cred/cred.txt");
+    Path dir = Paths.get("../data");
     try {
+      if(!Files.exists(dir)) {
+        Files.createDirectories(dir);
+      }
+      File cred = new File("../data/cred");
+
       if (!cred.exists()) {
         cred.createNewFile();
         String password = UUID.randomUUID().toString() + LocalTime.now().hashCode();
   
         FileWriter fileWriter = new FileWriter(cred);
-        fileWriter.append(password);
+        fileWriter.append(password + "\n");
         fileWriter.close();
         
         cred.setReadOnly();

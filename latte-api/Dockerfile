@@ -17,6 +17,6 @@ COPY --from=build app/target/latte-api.jar app.jar
 COPY --from=jre target/jre jre
 ENV DATASOURCE_USERNAME=postgres
 ENV DATASOURCE_PASSWORD=password
-ENV DATASOURCE_URL=jdbc:postgresql://postgres_db:5432/latte_db
+ENV DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/latte_db
 EXPOSE 8080
 ENTRYPOINT [ "jre/bin/java", "-jar", "app.jar", "--spring.profiles.active=dev" ]

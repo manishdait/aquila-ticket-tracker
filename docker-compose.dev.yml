@@ -1,0 +1,42 @@
+services:
+  postgres-db:
+    container_name: postgres-db
+    image: postgres:alpine
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - pg_data:/var/lib/postgresql/date
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=latte_db
+    networks:
+      - latte-network
+  latte-server:
+    container_name: latte-server
+    build: ./latte-api
+    restart: always
+    depends_on:
+      - postgres-db
+    networks:
+      - latte-network
+    volumes:
+      - data:/data
+  latte-client:
+    container_name: latte-client
+    build: ./latte-client
+    restart: always
+    depends_on:
+      - latte-server
+    ports:
+      - 80:80
+    networks:
+      - latte-network
+
+volumes:
+  pg_data: {}
+  data: {}
+
+networks:
+  latte-network:
